@@ -5,6 +5,7 @@ import { createRoom } from '../world/room.js';
 import { createArtwork } from '../world/artwork.js';
 import { createChandelier } from '../world/chandelier.js';
 import { createPalaceDoor } from '../world/door.js';
+import { createInfoStand } from '../world/stand.js';
 
 
 export function createGalleryScene() {
@@ -13,6 +14,8 @@ export function createGalleryScene() {
   scene.fog = new THREE.Fog(0x111111, 12, 90);
 
   const collidables = [];
+  const clickables = [];
+  const stands = [];
 
   // ---- Room ----
   const ROOM_W = 18;
@@ -120,6 +123,42 @@ export function createGalleryScene() {
     return art;
   }
 
+  function addStandForArt(artObj, { title, text }, opts = {}) {
+    const {
+      distFromWall = 1.2,   // tablonun önüne ne kadar gelsin
+      standY = 0,           // stand zeminden başlar
+      standHeightFix = 0,   // küçük ayar
+    } = opts;
+
+    // tablonun baktığı yönü bul (art.rotation’a göre)
+    const normal = new THREE.Vector3(0, 0, 1).applyEuler(artObj.rotation);
+
+    // stand pozisyonu: tablonun önüne doğru dist kadar
+    const pos = artObj.position.clone().add(normal.clone().multiplyScalar(distFromWall));
+    pos.y = standY;
+
+    const stand = createInfoStand({
+      position: [pos.x, pos.y, pos.z],
+      title,
+      text,
+    });
+
+    scene.add(stand);
+    stand.traverse(o => {
+      if (o.isMesh) clickables.push(o);
+    });
+    
+    stands.push(stand);
+
+    // raycast için: stand içindeki meshleri tıklanabilir listeye ekle
+    stand.traverse(o => {
+      if (o.isMesh) clickables.push(o);
+    });
+
+    return stand;
+  }
+
+
   // ---- Helper: soft spot on art (loş leke) ----
   function addSoftSpotForArt(art, opts = {}) {
     const {
@@ -187,12 +226,22 @@ export function createGalleryScene() {
   const monaY = 2.85;
   const monaZ = dividerZ + dividerT / 2 + 0.08;
   const monaObj = addArt(monaLisa, monaX, monaY, monaZ, 0);
+  addStandForArt(monaObj,
+    { title: 'Mona Lisa — Leonardo da Vinci', text: 'Rönesans dönemi. Yağlı boya...' },
+    { distFromWall: 1.1 }
+  );
+
   addSoftSpotForArt(monaObj, { intensity: 3.2, angle: Math.PI / 12, penumbra: 0.72, forwardOffset: 1.5, heightOffset: 2.5 });
 
   // Back wall
   const back1 = addArt(createArtwork({ imageUrl: '/artworks/a1.jpg', title:'Large Landscape', w:3.6,h:1.8, frameWidth:0.14, frameColor:0x1f140c, frameShape:'rect' }),
     -5.6, 3.0, backWallZ, 0
   );
+  addStandForArt(back1,
+    { title: 'Large Landscape', text: 'Bu eser geniş kompozisyon...' },
+    { distFromWall: 1.3 }
+  );
+
   addSoftSpotForArt(back1, { intensity: 2.6, angle: Math.PI / 10, penumbra: 0.7 });
 
   const back2 = addArt(createArtwork({ imageUrl: '/artworks/a3.jpg', title:'Tall Portrait', w:1.5,h:2.8, frameWidth:0.16, frameColor:0x2a1a12, frameShape:'rect' }),
@@ -273,6 +322,11 @@ export function createGalleryScene() {
     roomInfo: { width: ROOM_W, depth: ROOM_D, height: ROOM_H },
     doorApi: door,
     portal: { inPos: portalIn, outPos: portalOut, doorZ },
-    
+    clickables,
+    stands,
+    roomInfo: { width: ROOM_W, depth: ROOM_D, height: ROOM_H },
+    doorApi: door,
+    portal: { inPos: portalIn, outPos: portalOut, doorZ },
+    spawn
   };
 }

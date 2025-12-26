@@ -4,6 +4,13 @@ import { createFPSControls } from '../controls/fpsControls.js';
 import { createCameraControls } from '../controls/cameraControls.js';
 import { mountHint } from '../ui/hint.js';
 import { setupResize } from './resize.js';
+import { showInfoPanel } from '../ui/infoPanel.js';
+import { setHint, clearHint } from '../ui/hint.js';
+
+
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 export function initApp() {
   const container = document.querySelector('#app') ?? document.body;
@@ -23,16 +30,137 @@ export function initApp() {
   camera.lookAt(0, 1.6, -6);
 
   const world = createGalleryScene();
-  const { scene, update, collidables, roomInfo } = world;
+  const { scene, update, collidables, roomInfo,clickables,stands } = world;
 
   setupResize({ container, renderer, camera });
+
+  
 
   // --- Mode system ---
   let mode = 'exhibit';
   let active = null; // { controls, update, dispose }
 
+  let hovered = null; // Mesh
+  let hoveredStandGroup = null;  
+  const _origEmissive = new Map(); // mesh.uuid -> emissiveIntensity
+  const _tmp = new THREE.Vector3();
+
+  function setHover(mesh) {
+    if (mesh === hovered) return;
+  
+    // eski hover'ı geri al
+    if (hovered?.material?.emissive) {
+      const prev = _origEmissive.get(hovered.uuid);
+      if (prev) {
+        hovered.material.emissive.copy(prev.emissive);
+        hovered.material.emissiveIntensity = prev.intensity;
+      }
+    }
+  
+    hovered = mesh;
+  
+    // yeni hover'u uygula
+    if (hovered?.material?.emissive) {
+      if (!_origEmissive.has(hovered.uuid)) {
+        _origEmissive.set(hovered.uuid, {
+          emissive: hovered.material.emissive.clone(),
+          intensity: hovered.material.emissiveIntensity ?? 0,
+        });
+      }
+      hovered.material.emissive.set(0xffffff);
+      hovered.material.emissiveIntensity = 0.65;
+    }
+  
+    document.body.style.cursor = hovered ? 'pointer' : '';
+  }
+
+  function onCanvasClick(e) {
+    if (mode === 'fps') return;
+  
+    const rect = renderer.domElement.getBoundingClientRect();
+  
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(clickables, true);
+  
+    console.log('hits:', hits.length, hits[0]?.object?.userData); // debug
+  
+    if (!hits.length) return;
+  
+    const data = hits[0].object.userData;
+    if (data?.type === 'stand') {
+      showInfoPanel(data);
+    }
+  }
+  
+
+  renderer.domElement.addEventListener('click', onCanvasClick);
+
+    console.log('clickables:', clickables?.length, 'stands:', stands?.length);
+
+
+    function onMouseMove(e) {
+      if (mode !== 'exhibit') {
+        setHover(null);
+        hoveredStandGroup = null;
+        return;
+      }
+    
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(clickables, true);
+      const hitMesh = hits[0]?.object ?? null;
+    
+      if (hitMesh?.userData?.type === 'stand') {
+        setHover(hitMesh);
+    
+        // stand group'u bul (parent chain)
+        let g = hitMesh;
+        while (g && !g.userData?.type) g = g.parent;
+        hoveredStandGroup = g;
+      } else {
+        setHover(null);
+        hoveredStandGroup = null;
+      }
+    }
+    
+    renderer.domElement.addEventListener('mousemove', onMouseMove);
+  
+  function updateProximityHint() {
+  if (mode !== 'exhibit') {
+    clearHint();
+    return;
+  }
+
+  // Hover edilen stand varsa: sadece onu kontrol et (daha performanslı)
+  if (hoveredStandGroup) {
+    hoveredStandGroup.getWorldPosition(_tmp);
+    const near = camera.position.distanceTo(_tmp) < 2.0;
+    if (near) setHint('Tıkla: Bilgi');
+    else clearHint();
+    return;
+  }
+
+  // Hover yoksa: tüm stand'lere bak (opsiyonel)
+  let nearAny = false;
+  for (const s of (stands || [])) {
+    s.getWorldPosition(_tmp);
+    if (camera.position.distanceTo(_tmp) < 2.0) { nearAny = true; break; }
+  }
+
+  if (nearAny) setHint('Tıkla: Bilgi');
+  else clearHint();
+}
+
+    
   function getMode() {
     return mode;
+    
   }
 
   function resetCameraExhibit() {
@@ -96,6 +224,11 @@ export function initApp() {
     active = null;
 
     mode = newMode;
+    
+    setHover(null);
+    hoveredStandGroup = null;
+    clearHint();
+
 
     // yeni modu aç
     active = (mode === 'fps') ? enableFPS() : enableExhibit();
@@ -131,7 +264,9 @@ export function initApp() {
     update?.(dt);
     updateControls(dt);
 
+    updateProximityHint();
     renderer.render(scene, camera);
+    
   }
 
   render();

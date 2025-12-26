@@ -43,3 +43,28 @@ export function mountHint({ onExhibit, onFPS, getMode }) {
 
   refresh();
 }
+
+// ================================
+// DYNAMIC HINT API (Hover / Proximity)
+// ================================
+
+let hintEl = null;
+
+function getHintEl() {
+  if (!hintEl) {
+    hintEl = document.querySelector('.ui-hint');
+  }
+  return hintEl;
+}
+
+export function setHint(text) {
+  const el = getHintEl();
+  if (!el) return;
+
+  el.innerHTML = text || '';
+  el.style.display = text ? 'block' : 'none';
+}
+
+export function clearHint() {
+  setHint('');
+}
