@@ -5,7 +5,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 export function createCameraControls(camera, domElement, options = {}) {
   const {
     collidables = [],
-    target = new THREE.Vector3(0, 2.8, -3),
+    target = new THREE.Vector3(0, 2.2, 0),
     minDistance = 2.5,
     maxDistance = 18,
     collisionOffset = 0.3,

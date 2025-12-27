@@ -11,6 +11,7 @@ import { mountMusicToggle } from '../ui/musicToggle.js';
 
 // ✅ DOĞRU import
 import { initBgMusic, startBgMusic, setBgVolume, isBgReady } from '../audio/bgMusic.js';
+import { playIntroSequence } from '../ui/introSequence.js';
 
 
 const raycaster = new THREE.Raycaster();
@@ -29,9 +30,14 @@ export function initApp() {
   renderer.toneMappingExposure = 1.2;
   container.appendChild(renderer.domElement);
 
-  const camera = new THREE.PerspectiveCamera(85, 1, 0.1, 200);
-  camera.position.set(0, 1.6, 6);
-  camera.lookAt(0, 1.6, -6);
+  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 200);
+  const START_POS = new THREE.Vector3(0, 2.2, 14);
+  const START_LOOK = new THREE.Vector3(0, 2.2, 0);
+  const EXHIBIT_TARGET = new THREE.Vector3(0, 2.2, 0);
+
+  camera.position.copy(START_POS);
+  camera.lookAt(START_LOOK);
+ 
 
   // ✅ Müzik sistemi hazırla (burada play etme!)
   initBgMusic(camera); // /public/audio/museum.mp3
@@ -54,8 +60,6 @@ export function initApp() {
     }
   }
   
-  
-
 
 
   // ---- Music UI State ----
@@ -98,29 +102,24 @@ mountMusicToggle({
 });
 
 
-
-  let musicStarted = false;
-  function ensureMusicStart() {
-    if (musicStarted) return;
-    musicStarted = true;
-
-    // buffer hazır değilse, ilk etkileşimden sonra kısa süre içinde hazır olunca çal
-    if (isBgReady()) {
-      startBgMusic();
-    } else {
-      const t = setInterval(() => {
-        if (isBgReady()) {
-          clearInterval(t);
-          startBgMusic();
-        }
-      }, 150);
-    }
-  }
-
   const world = createGalleryScene();
   const { scene, update, collidables, roomInfo, clickables, stands } = world;
 
+
+  
   setupResize({ container, renderer, camera });
+  
+  // Start butonu intro
+  playIntroSequence({
+    onStart: () => {
+      introPlayed = true;
+      ensureMusicStart();
+    }
+  });
+  
+  renderer.domElement.addEventListener('click', onCanvasClick);
+
+
 
   // --- Mode system ---
   let mode = 'exhibit';
@@ -158,25 +157,29 @@ mountMusicToggle({
     document.body.style.cursor = hovered ? 'pointer' : '';
   }
 
-  function onCanvasClick(e) {
-    ensureMusicStart();
-    if (mode === 'fps') return;
+  let introPlayed = false;
 
-    const rect = renderer.domElement.getBoundingClientRect();
-
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    const hits = raycaster.intersectObjects(clickables, true);
-
-    if (!hits.length) return;
-
-    const data = hits[0].object.userData;
-    if (data?.type === 'stand') showInfoPanel(data);
+function onCanvasClick(e) {
+  if (!introPlayed) return; // intro bitmeden tıklanmasın
+  if (mode === 'fps' && active?.controls?.lock) {
+    active.controls.lock();
+    return;
   }
+  
 
-  renderer.domElement.addEventListener('click', onCanvasClick);
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(clickables, true);
+  if (!hits.length) return;
+
+  const data = hits[0].object.userData;
+  if (data?.type === 'stand') showInfoPanel(data);
+}
+
+
 
   function onMouseMove(e) {
     if (mode !== 'exhibit') {
@@ -239,24 +242,25 @@ mountMusicToggle({
   }
 
   function resetCameraExhibit() {
-    camera.position.set(0, 1.6, 6);
-    camera.lookAt(0, 1.6, -6);
-  }
+  camera.position.copy(START_POS);
+  camera.lookAt(START_LOOK);
+}
 
-  function resetCameraFPS() {
-    camera.position.set(0, 1.6, 6);
-    camera.lookAt(0, 1.6, -6);
-  }
+function resetCameraFPS() {
+  camera.position.copy(START_POS);
+  camera.lookAt(START_LOOK);
+}
+
 
   function enableExhibit() {
     resetCameraExhibit();
 
     const api = createCameraControls(camera, renderer.domElement, {
-      target: { x: 0, y: 2.8, z: -3 },
+      target: EXHIBIT_TARGET,
       room: roomInfo ?? { width: 18, depth: 30, height: 10.5, margin: 0.8 },
       collidables,
-      minDistance: 2.0,
-      maxDistance: 18.0,
+      minDistance: 4.0,
+      maxDistance: 26.0,
       enablePan: false,
       enableZoom: true,
     });

@@ -8,6 +8,9 @@ import { createPalaceDoor } from '../world/door.js';
 import { createInfoStand } from '../world/stand.js';
 
 
+
+
+
 export function createGalleryScene() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x111111);
@@ -286,16 +289,6 @@ export function createGalleryScene() {
   );
   addSoftSpotForArt(right3, { intensity: 2.3, forwardOffset: 1.5, heightOffset: 2.4 });
 
-  // Pedestal
-  const pedestal = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.5, 0.65, 0.85, 24),
-    new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.08 })
-  );
-  pedestal.position.set(0, 0.42, dividerZ + 4.2);
-  pedestal.castShadow = true;
-  pedestal.receiveShadow = true;
-  scene.add(pedestal);
-  collidables.push(pedestal);
 
   // ---- Door trigger zone (3) ----
   // Kapının iç tarafında ve dış tarafında küçük “portal”
@@ -303,7 +296,6 @@ export function createGalleryScene() {
   const portalOut = new THREE.Vector3(0, 1.6, ROOM_D / 2 + 6.0);
 
   function update(dt) {
-    pedestal.rotation.y += dt * 0.3;
     door.update(dt);
   }
 
