@@ -159,13 +159,13 @@ mountMusicToggle({
 
   let introPlayed = false;
 
+// src/app/init.js içindeki onCanvasClick fonksiyonu
 function onCanvasClick(e) {
-  if (!introPlayed) return; // intro bitmeden tıklanmasın
+  if (!introPlayed) return;
   if (mode === 'fps' && active?.controls?.lock) {
     active.controls.lock();
     return;
   }
-  
 
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -173,10 +173,20 @@ function onCanvasClick(e) {
 
   raycaster.setFromCamera(mouse, camera);
   const hits = raycaster.intersectObjects(clickables, true);
-  if (!hits.length) return;
+  
+  if (hits.length > 0) {
+    let target = hits[0].object;
 
-  const data = hits[0].object.userData;
-  if (data?.type === 'stand') showInfoPanel(data);
+    // userData.type 'stand' olana kadar yukarı bak
+    while (target && target.userData?.type !== 'stand') {
+      target = target.parent;
+    }
+
+    if (target && target.userData) {
+      console.log("[DEBUG] Panel açılıyor, veri:", target.userData);
+      showInfoPanel(target.userData); // Artık içinde text, title vb. olan objeyi gönderiyoruz
+    }
+  }
 }
 
 

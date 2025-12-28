@@ -16,7 +16,6 @@
   background: rgba(20,20,20,0.75);
   color: #fff;
   cursor: pointer;
-  
 }
 
 .ui-btn.active {
@@ -36,59 +35,16 @@
   border-radius: 10px;
   padding: 10px 12px;
   max-width: 420px;
+  pointer-events: none;
 }
 
-.ui-bar {
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  display: flex;
-  gap: 8px;
-  z-index: 9999;
-  pointer-events: auto;
-}
-
-.ui-btn {
-  font: 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(20,20,20,0.75);
-  color: #fff;
-  cursor: pointer;
-  
-}
-
-.ui-btn.active {
-  border-color: rgba(255,255,255,0.35);
-  background: rgba(80,80,80,0.65);
-}
-
-.ui-hint {
-  position: fixed;
-  bottom: 12px;
-  left: 12px;
-  z-index: 9999;
-  color: rgba(255,255,255,0.85);
-  font: 13px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  background: rgba(20,20,20,0.55);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 10px 12px;
-  max-width: 420px;
-}
-
-.ui-bar { pointer-events: auto; }
-.ui-btn { pointer-events: auto; }
-.ui-hint { pointer-events: none; }
-
-.info-panel{
+.info-panel {
   position: fixed;
   top: 16px;
   right: 16px;
   width: 380px;
-  max-height: calc(100vh - 32px);
-  overflow: hidden;
+  max-height: calc(100vh - 120px); /* Artık müzik kutusuna çarpmayacak kadar boşluk bırakır */
+  overflow-y: auto;
   color: rgba(255,255,255,0.92);
 
   /* Antik kart hissi */
@@ -104,25 +60,27 @@
   padding: 14px 14px 12px;
 }
 
-.info-panel.hidden { display:none; }
+.info-panel.hidden { 
+  display: none; 
+}
 
-.info-panel__header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+.info-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
   padding-bottom: 10px;
   margin-bottom: 10px;
   border-bottom: 1px solid rgba(220,180,90,0.22);
 }
 
-.info-panel__title{
-  margin:0;
+.info-panel__title {
+  margin: 0;
   font-size: 16px;
   letter-spacing: 0.2px;
 }
 
-.info-panel__close{
+.info-panel__close {
   width: 34px;
   height: 34px;
   border-radius: 10px;
@@ -132,7 +90,7 @@
   cursor: pointer;
 }
 
-.info-panel__meta{
+.info-panel__meta {
   display: grid;
   grid-template-columns: 1fr;
   gap: 6px;
@@ -141,35 +99,40 @@
   margin-bottom: 10px;
 }
 
-.info-panel__meta b{
+.info-panel__meta b {
   color: rgba(255,225,160,0.95);
   font-weight: 600;
 }
 
-.info-panel__image{
+.info-panel__image {
   width: 100%;
-  display:block;
+  display: block;
   border-radius: 12px;
   margin-bottom: 10px;
   border: 1px solid rgba(220,180,90,0.22);
 }
 
-.info-panel__body{
-  max-height: 45vh;
-  overflow: auto;
+.info-panel__body {
+  max-height: none;
   padding-right: 6px;
-  line-height: 1.55;
+  line-height: 1.6;
   font-size: 14px;
-  color: rgba(255,255,255,0.90);
+  color: #f0f0f0;
+  margin-top: 12px;
+  white-space: pre-wrap;
 }
 
-/* Scrollbar (Chrome) */
-.info-panel__body::-webkit-scrollbar { width: 10px; }
-.info-panel__body::-webkit-scrollbar-thumb {
+/* Scrollbar (Chrome) - Info Panel için */
+.info-panel::-webkit-scrollbar { 
+  width: 10px; 
+}
+
+.info-panel::-webkit-scrollbar-thumb {
   background: rgba(220,180,90,0.22);
   border-radius: 999px;
 }
-.info-panel__body::-webkit-scrollbar-track {
+
+.info-panel::-webkit-scrollbar-track {
   background: rgba(255,255,255,0.06);
   border-radius: 999px;
 }

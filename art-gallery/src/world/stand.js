@@ -8,6 +8,7 @@ export function createInfoStand({
   artist,
   year,
   technique,
+  text,
   description,
   imageUrl
 }) {
@@ -60,7 +61,7 @@ export function createInfoStand({
     artist,
     year,
     technique,
-    description,
+    text: text || description,
     imageUrl
   };
 
