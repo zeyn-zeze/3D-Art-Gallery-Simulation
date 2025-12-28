@@ -369,10 +369,10 @@ export function createGalleryScene() {
 
   // Right wall middle: a1.jpg (ikinci landscape)
   const right2 = addArt(
-    createArtwork({ imageUrl: "/artworks/a1.jpg", title: "Landscape Study — (Koleksiyon)", w: 2.6, h: 1.5, frameWidth: 0.12, frameColor: 0x1f140c, frameShape: "rect" }),
+    createArtwork({ imageUrl: "/artworks/a1.jpg", title: "Landscape Study — (Koleksiyon)", w: 5.6, h: 4.5, frameWidth: 0.12, frameColor: 0x1f140c, frameShape: "rect" }),
     rightWallX,
-    2.95,
-    -2.0,
+    2.7,
+    3.4,
     -Math.PI / 2
   );
 
