@@ -60,8 +60,9 @@ function injectStylesOnce() {
   style.textContent = `
     .music-ui{
       position: fixed;
-      top: 12px;
-      right: 12px;
+      top: auto;
+      right: 16px;
+      bottom: 16px;
       z-index: 9999;
       display: flex;
       gap: 10px;
