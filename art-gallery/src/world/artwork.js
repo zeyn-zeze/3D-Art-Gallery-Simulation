@@ -20,6 +20,36 @@ export function createArtwork({
   const texture = loader.load(imageUrl);
   texture.colorSpace = THREE.SRGBColorSpace;
 
+  function makeEllipseMaskTexture(size = 512, shape = "oval") {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  // black = transparent, white = visible
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+
+  if (shape === "round") {
+    const r = size * 0.49;
+    ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
+  } else {
+    // oval
+    ctx.ellipse(size / 2, size / 2, size * 0.49, size * 0.49, 0, 0, Math.PI * 2);
+  }
+
+  ctx.closePath();
+  ctx.fill();
+
+  const tex = new THREE.CanvasTexture(canvas);
+  // alphaMap grayscale ok; colorSpace şart değil ama zarar vermez
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
   // Resim yüzeyi
   const imageMat = new THREE.MeshStandardMaterial({
     map: texture,
@@ -27,10 +57,24 @@ export function createArtwork({
     metalness: 0.0,
   });
 
+  // ✅ Oval/Round frame'de resmin köşelerini kırp (kareyi yok eder)
+  if (frameShape === "oval" || frameShape === "round") {
+    imageMat.alphaMap = makeEllipseMaskTexture(512, frameShape);
+    imageMat.transparent = true;
+    imageMat.alphaTest = 0.5; // keskin kırpma
+    // imageMat.side = THREE.DoubleSide; // gerekirse aç
+  }
+
+
+
+
   const image = new THREE.Mesh(
     new THREE.PlaneGeometry(w, h),
     imageMat
   );
+
+  
+
 
   // Frame'in biraz önünde dursun
   image.position.z = 0.01;

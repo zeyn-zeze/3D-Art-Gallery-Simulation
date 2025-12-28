@@ -244,7 +244,7 @@ export function createGalleryScene() {
 
   // 4) The Last Supper
   const back3 = addArt(
-    createArtwork({ imageUrl: "/artworks/lastsupper.jpg", title: "The Last Supper — Leonardo da Vinci", w: 1.1, h: 1.1, frameWidth: 0.12, frameColor: 0x2b2116, frameShape: "rect" }),
+    createArtwork({ imageUrl: "/artworks/lastsupper.jpg", title: "The Last Supper — Leonardo da Vinci", w: 4.5, h: 3.5, frameWidth: 0.12, frameColor: 0x2b2116, frameShape: "rect" }),
     6.2,
     2.7,
     backWallZ,
@@ -319,10 +319,10 @@ export function createGalleryScene() {
 
   // Osman Hamdi Bey
   const left3 = addArt(
-    createArtwork({ imageUrl: "/artworks/osmanhamdikaplumbaga.jpg", title: "Kaplumbağa Terbiyecisi — Osman Hamdi Bey", w: 3.0, h: 1.25, frameWidth: 0.13, frameColor: 0x24170e, frameShape: "rect" }),
+    createArtwork({ imageUrl: "/artworks/osmanhamdikaplumbaga.jpg", title: "Kaplumbağa Terbiyecisi — Osman Hamdi Bey", w: 3.0, h: 4.45, frameWidth: 0.13, frameColor: 0x24170e, frameShape: "rect" }),
     leftWallX,
-    3.2,
-    9.0,
+    3.35,
+    7.7,
     Math.PI / 2
   );
 
@@ -394,7 +394,7 @@ export function createGalleryScene() {
 
   // Starry Night
   const right3 = addArt(
-    createArtwork({ imageUrl: "/artworks/yıldızlıgeceler.jpg", title: "The Starry Night — Vincent van Gogh", w: 1.25, h: 1.7, frameWidth: 0.16, frameColor: 0x3b2a14, frameShape: "oval" }),
+    createArtwork({ imageUrl: "/artworks/yıldızlıgeceler.jpg", title: "The Starry Night — Vincent van Gogh", w: 1.25, h: 1.5, frameWidth: 0.16, frameColor: 0x3b2a14, frameShape: "oval" }),
     rightWallX,
     2.75,
     8.5,
