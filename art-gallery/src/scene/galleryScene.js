@@ -59,6 +59,16 @@ export function createGalleryScene() {
     metalness: 0.0,
   });
 
+    // ---- Invisible floor for click-to-move (Exhibit mode) ----
+  const floorRay = new THREE.Mesh(
+    new THREE.PlaneGeometry(ROOM_W, ROOM_D),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  floorRay.rotation.x = -Math.PI / 2;
+  floorRay.position.y = 0.001;
+  scene.add(floorRay);
+
+
   const carpetIn = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 7.0), carpetMat);
   carpetIn.rotation.x = -Math.PI / 2;
   carpetIn.position.set(0, 0.01, ROOM_D / 2 - 3.8);
@@ -443,5 +453,6 @@ export function createGalleryScene() {
     clickables,
     stands,
     spawn,
+    floorRay,
   };
 }

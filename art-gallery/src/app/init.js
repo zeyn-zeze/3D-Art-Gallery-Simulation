@@ -103,7 +103,7 @@ mountMusicToggle({
 
 
   const world = createGalleryScene();
-  const { scene, update, collidables, roomInfo, clickables, stands } = world;
+  const { scene, update, collidables, roomInfo, clickables, stands,floorRay } = world;
 
 
   
@@ -158,10 +158,27 @@ mountMusicToggle({
   }
 
   let introPlayed = false;
+  let exhibitMoveTarget = null;
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function clampCameraInsideRoom(cam, room, margin = 0.8) {
+  const halfW = room.width / 2 - margin;
+  const halfD = room.depth / 2 - margin;
+
+  cam.position.x = clamp(cam.position.x, -halfW, halfW);
+  cam.position.z = clamp(cam.position.z, -halfD, halfD);
+
+  // Y sınırı (zeminin altına inme / tavana çıkma)
+  cam.position.y = clamp(cam.position.y, 1.2, room.height - 0.9);
+}
+
+
 
 // src/app/init.js içindeki onCanvasClick fonksiyonu
 function onCanvasClick(e) {
   if (!introPlayed) return;
+
+  // FPS: click => lock
   if (mode === 'fps' && active?.controls?.lock) {
     active.controls.lock();
     return;
@@ -172,22 +189,36 @@ function onCanvasClick(e) {
   mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
   raycaster.setFromCamera(mouse, camera);
+
+  // 1) Önce stand tıklaması var mı?
   const hits = raycaster.intersectObjects(clickables, true);
-  
   if (hits.length > 0) {
     let target = hits[0].object;
+    while (target && target.userData?.type !== 'stand') target = target.parent;
 
-    // userData.type 'stand' olana kadar yukarı bak
-    while (target && target.userData?.type !== 'stand') {
-      target = target.parent;
-    }
-
-    if (target && target.userData) {
-      console.log("[DEBUG] Panel açılıyor, veri:", target.userData);
-      showInfoPanel(target.userData); // Artık içinde text, title vb. olan objeyi gönderiyoruz
+    if (target?.userData) {
+      showInfoPanel(target.userData);
+      return;
     }
   }
+
+  // 2) Sergi modunda stand yoksa: zemine tıkla -> yürü
+  if (mode !== 'exhibit' || !floorRay) return;
+
+  const floorHit = raycaster.intersectObject(floorRay, true)[0];
+  if (!floorHit) return;
+
+  const p = floorHit.point;
+
+  // ✅ oda dışına çıkma (margin ile)
+  const margin = 1.0;
+  const x = clamp(p.x, -roomInfo.width / 2 + margin, roomInfo.width / 2 - margin);
+  const z = clamp(p.z, -roomInfo.depth / 2 + margin, roomInfo.depth / 2 - margin);
+
+  // ✅ hedef: orbit target taşınacak
+  exhibitMoveTarget = new THREE.Vector3(x, EXHIBIT_TARGET.y, z);
 }
+
 
 
 
@@ -342,15 +373,47 @@ function resetCameraFPS() {
   }
 
   function render() {
-    requestAnimationFrame(render);
+  requestAnimationFrame(render);
 
-    const dt = clock.getDelta();
-    update?.(dt);
-    updateControls(dt);
+  const dt = clock.getDelta();
+  update?.(dt);
 
-    updateProximityHint();
-    renderer.render(scene, camera);
+  // ✅ 1) Exhibit click-to-move (ÖNCE uygula)
+  if (mode === 'exhibit' && exhibitMoveTarget && active?.controls) {
+    const controls = active.controls; // OrbitControls
+    const speed = 4.5;
+    const t = 1 - Math.exp(-speed * dt);
+
+    const offset = camera.position.clone().sub(controls.target);
+
+    controls.target.lerp(exhibitMoveTarget, t);
+    camera.position.copy(controls.target).add(offset);
+
+    if (controls.target.distanceTo(exhibitMoveTarget) < 0.05) {
+      exhibitMoveTarget = null;
+    }
   }
+
+  // ✅ 2) Orbit damping + collision
+  updateControls(dt);
+
+  // ✅ 3) Exhibit modunda oda dışına çıkmayı engelle (SONRA)
+  if (mode === 'exhibit' && roomInfo) {
+    clampCameraInsideRoom(camera, roomInfo, 0.9);
+
+    if (active?.controls?.target) {
+      const tgt = active.controls.target;
+      const halfW = roomInfo.width / 2 - 1.0;
+      const halfD = roomInfo.depth / 2 - 1.0;
+      tgt.x = clamp(tgt.x, -halfW, halfW);
+      tgt.z = clamp(tgt.z, -halfD, halfD);
+    }
+  }
+
+  updateProximityHint();
+  renderer.render(scene, camera);
+}
+
 
   render();
 

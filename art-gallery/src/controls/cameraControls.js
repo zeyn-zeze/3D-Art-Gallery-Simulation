@@ -19,8 +19,8 @@ export function createCameraControls(camera, domElement, options = {}) {
   orbit.minDistance = minDistance;
   orbit.maxDistance = maxDistance;
 
-  orbit.minPolarAngle = 0.55;
-  orbit.maxPolarAngle = Math.PI - 0.65;
+  orbit.minPolarAngle = 0.75;
+  orbit.maxPolarAngle = Math.PI - 0.85;
 
   orbit.target.copy(target);
 
