@@ -6,6 +6,8 @@ import { createArtwork } from '../world/artwork.js';
 import { createChandelier } from '../world/chandelier.js';
 import { createPalaceDoor } from '../world/door.js';
 import { createInfoStand } from '../world/stand.js';
+import { createTourist } from '../world/tourist.js';
+
 
 
 
@@ -125,6 +127,25 @@ export function createGalleryScene() {
     collidables.push(art);
     return art;
   }
+
+  function addStandForArt(artObj, data, offset = { x: 0.9, y: 0, z: 0.9 }) {
+    const p = new THREE.Vector3();
+    artObj.getWorldPosition(p);
+  
+    const stand = createInfoStand({
+      position: [p.x + offset.x, 0, p.z + offset.z],
+      ...data
+    });
+  
+    scene.add(stand);
+    stands.push(stand);
+  
+    // Raycast için mesh’leri clickables’a koy
+    stand.traverse(o => { if (o.isMesh) clickables.push(o); });
+  
+    return stand;
+  }
+  
 
   function addStandForArt(artObj, { title, text }, opts = {}) {
     const {
@@ -295,8 +316,90 @@ export function createGalleryScene() {
   const portalIn = new THREE.Vector3(0, 1.6, ROOM_D / 2 - 1.2);
   const portalOut = new THREE.Vector3(0, 1.6, ROOM_D / 2 + 6.0);
 
+  // =====================
+// GUIDE (Rehber) Sistemi
+// =====================
+
+// UI event kuyruğu (init.js okuyacak)
+const uiEvents = [];
+function emit(evt) { uiEvents.push(evt); }
+
+// Rehber karakter
+const guide = createTourist({
+  position: new THREE.Vector3(-2.5, 0, ROOM_D / 2 - 5),
+  scale: 1.0,
+});
+scene.add(guide.object);
+guide.setSpeed?.(0.9); // setSpeed varsa
+guide.setCollidables?.(collidables);
+
+
+// Tur listesi (stand’ler oluştuktan sonra dolu olmalı)
+const tourStands = [];
+let tourIndex = 0;
+let guideState = 'walk'; // 'walk' | 'pause'
+let pauseT = 0;
+
+// Stand’ler artık oluşturulduysa: ilk 5 stand’i tura al
+for (let i = 0; i < Math.min(5, stands.length); i++) {
+  tourStands.push(stands[i]);
+}
+
+// Stand’ın yanına hedef nokta üret
+function standStopPoint(stand) {
+  const p = new THREE.Vector3();
+  stand.getWorldPosition(p);
+
+  // stand’ın üstüne binmesin diye offset
+  return p.clone().add(new THREE.Vector3(0.8, 0, 0.8));
+}
+
+function goNextStop() {
+  if (!tourStands.length) return;
+  const s = tourStands[tourIndex % tourStands.length];
+  guide.setTarget(standStopPoint(s));
+}
+goNextStop();
+
+
+  // ---- Guide update ----
+function updateGuide(dt) {
+  if (!tourStands.length) return;
+
+  if (guideState === 'walk') {
+    const dist = guide.update(dt);
+    if (dist < 0.25) {
+      guideState = 'pause';
+      pauseT = 0;
+
+      const stand = tourStands[tourIndex % tourStands.length];
+
+      emit({
+        type: 'guide_hint',
+        text: `Rehber: Şimdi "${stand.userData?.title}" eserine bakalım.`
+      });
+
+      emit({
+        type: 'open_panel',
+        data: stand.userData
+      });
+    }
+  } else {
+    pauseT += dt;
+    if (pauseT > 3.5) {
+      tourIndex = (tourIndex + 1) % tourStands.length;
+      guideState = 'walk';
+      goNextStop();
+    }
+  }
+}
+
+  
+
   function update(dt) {
     door.update(dt);
+
+    updateGuide(dt);
   }
 
   const spawn = {
@@ -316,9 +419,9 @@ export function createGalleryScene() {
     portal: { inPos: portalIn, outPos: portalOut, doorZ },
     clickables,
     stands,
-    roomInfo: { width: ROOM_W, depth: ROOM_D, height: ROOM_H },
-    doorApi: door,
-    portal: { inPos: portalIn, outPos: portalOut, doorZ },
-    spawn
+    spawn,
+    guideApi: {
+      popEvents() { return uiEvents.splice(0, uiEvents.length); }
+    }
   };
 }
